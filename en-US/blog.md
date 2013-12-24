@@ -1,3 +1,3 @@
 # Blogs
 
-- [Hello world](blog/hello_world)
+- [beego 1.0 release](blog/beego1_release)
