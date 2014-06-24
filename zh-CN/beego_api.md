@@ -18,13 +18,13 @@ beego1.3版本已经在上个星期发布了，但是还是有很多人不了解
 	
 然后进入到你的`GOPATH/src`目录，执行命令`bee api bapi`,进入目录`cd bapi`,执行命令`bee run -downdoc=true -docgen=true`.请看下面我执行的效果图：
 
-![](images/bee_api.png)
+![](https://raw.githubusercontent.com/beego/beeblog/master/zh-CN/images/bee_api.png)
 
 执行完成之后就打开浏览器，输入URL:[http://127.0.0.1:8080/swagger/swagger-1/](http://127.0.0.1:8080/swagger/swagger-1/)
 
 >>> 记住这里必须要用127.0.0.1，不能使用localhost，存在CORS问题，Ajax跨域
 
-![](images/docs.png)
+![](https://raw.githubusercontent.com/beego/beeblog/master/zh-CN/images/docs.png)
 
 我们的效果和应用都出来了，很酷很炫吧，那这后面到底采用了怎么样的一些技术呢？让我们一步一步来讲解这些细节：
 
