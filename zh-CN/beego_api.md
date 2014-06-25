@@ -182,9 +182,253 @@ func (this *ObjectController) Post() {
 首先第一步就是API的描述：
 
 ### API文档
-我们看到在`router.go`里面头部有一大段的
+我们看到在`router.go`里面头部有一大段的注释，这些注释就是描述整个项目的一些信息：
 
-### 子路由文档
+```
+// @APIVersion 1.0.0
+// @Title beego Test API
+// @Description beego has a very cool tools to autogenerate documents for your API
+// @Contact astaxie@gmail.com
+// @TermsOfServiceUrl http://beego.me/
+// @License Apache 2.0
+// @LicenseUrl http://www.apache.org/licenses/LICENSE-2.0.html
+```
 
+这里面主要是几个标志：
+
+- @APIVersion
+- @Title
+- @Description
+- @Contact
+- @TermsOfServiceUrl
+- @License
+- @LicenseUrl
+
+这里每一个都不是必须的，你可以写也可以不写，后面就是一个字符串，你可以使用任意喜欢的字符进行描述。我们来看一下生成的：http://127.0.0.1:8080/docs
+
+```
+{
+  "apiVersion": "1.0.0",
+  "swaggerVersion": "1.2",
+  "apis": [
+    {
+      "path": "/object",
+      "description": "Operations about object\n"
+    },
+    {
+      "path": "/user",
+      "description": "Operations about Users\n"
+    }
+  ],
+  "info": {
+    "title": "beego Test API",
+    "description": "beego has a very cool tools to autogenerate documents for your API",
+    "contact": "astaxie@gmail.com",
+    "termsOfServiceUrl": "http://beego.me/",
+    "license": "Url http://www.apache.org/licenses/LICENSE-2.0.html"
+  }
+}
+```
+这是首次请求的一些信息，那么apis是怎么来的呢？这个就是根据你的namespace进行源码AST分析获取的，所以目前只支持两层的namespace嵌套，而且必须是两层，第一层是baseurl，第二层就是嵌套的namespace的prefix。也就是上面的path信息，那么里面的description那里获取的呢？请看控制器的注释，
+
+### 控制器注释文档
+针对每一个控制我们可以增加注释，用来描述该控制器的作用：
+
+```
+// Operations about object
+type ObjectController struct {
+	beego.Controller
+}
+```
+这个注释就是用来表示我们的每一个控制器API的作用，而控制器的函数里面的注释就是用来表示调用的路由、参数、作用以及返回的信息。
+
+```
+// @Title Get
+// @Description find object by objectid
+// @Param	objectId		path 	string	true		"the objectid you want to get"
+// @Success 200 {object} models.Object
+// @Failure 403 :objectId is empty
+// @router /:objectId [get]
+func (this *ObjectController) Get() {
+}
+```
+
+从上面的注释我们可以把我们的注释分为以下类别：
+
+- @Title
+
+	接口的标题，用来标示唯一性，唯一，可选
+	
+	格式：之后跟一个描述字符串
+	
+- @Description
+
+	接口的作用，用来描述接口的用途，唯一，可选
+	
+	格式：之后跟一个描述字符串	
+	
+- @Param
+
+	请求的参数，用来描述接受的参数，多个，可选
+
+	格式：变量名 传输类型 类型  是否必须  描述
+	
+	传输类型：
+	* query  表示带在url串里面?aa=bb&cc=dd 
+	* form   表示使用表单递交数据
+	* path   表示URL串中得字符，例如/user/{uid} 那么uid就是一个path类型的参数
+	* body   表示使用raw body进行数据的传输
+	* header 表示通过header进行数据的传输
+	
+	类型：
+	* string
+	* int
+	* int64
+	* 对象，这个地方大家写的时候需要注意，需要是相对于当前项目的路径.对象，例如`models.Object`表示`models`目录下的Object对象，这样bee在生成文档的时候会去扫描改对象并显示给用户改对象。
+	
+	变量名和描述是一个字符串
+	
+	是否必须：true 或者false
+	
+- @Success
+
+	成功返回的code和对象或者信息
+	
+	格式：code 对象类型 信息或者对象路径
+	
+	code：表示HTTP的标准status code，200 201等
+	
+	对象类型：{object}表示对象，其他默认都认为是字符类型，会显示第三个参数给用户，如果是{object}类型，那么就会去扫描改对象，并显示给用户
+	
+	对象路径和上面Param中得对象类型一样，使用路径.对象的方式来描述
+	
+- @Failure
+
+	错误返回的信息，
+	
+	格式： code 信息
+	
+	code:同上Success
+	
+	错误信息：字符串描述信息
+	
+- @router
+
+	上面已经描述过支持两个参数，第一个是路由，第二个表示支持的HTTP方法
+	
+那么我们通过上面的注释会生成怎么样的JSON信息呢？
+
+```
+{
+  "path": "/object/{objectId}",
+  "description": "",
+  "operations": [
+    {
+      "httpMethod": "GET",
+      "nickname": "Get",
+      "type": "",
+      "summary": "find object by objectid",
+      "parameters": [
+        {
+          "paramType": "path",
+          "name": "objectId",
+          "description": "\"the objectid you want to get\"",
+          "dataType": "string",
+          "type": "",
+          "format": "",
+          "allowMultiple": false,
+          "required": true,
+          "minimum": 0,
+          "maximum": 0
+        }
+      ],
+      "responseMessages": [
+        {
+          "code": 200,
+          "message": "models.Object",
+          "responseModel": "Object"
+        },
+        {
+          "code": 403,
+          "message": ":objectId is empty",
+          "responseModel": ""
+        }
+      ]
+    }
+  ]
+}
+```	
+
+>>> 上面阐述的这些描述都是可以使用一个或者多个 `'\t', '\n', '\v', '\f', '\r', ' ', U+0085 (NEL), U+00A0 (NBSP)`进行分割
+
+### 对象自定义注释
+我们的对象定义如下：
+
+```
+type Object struct {
+	ObjectId   string
+	Score      int64
+	PlayerName string
+}
+```
+
+通过扫描生成的代码如下：
+
+```
+Object {
+ObjectId (string, optional): ,
+PlayerName (string, optional): ,
+Score (int64, optional):
+}
+```
+
+我们发现字段都是`optional`的,而且没有任何针对字段的描述，其实我们可以在对象定义里面增加如下的tag：
+
+```
+type Object struct {
+	ObjectId   string	`required:"true" description:"object id"`
+	Score      int64		`required:"true" description:"players's scores"`
+	PlayerName string	`required:"true" description:"plaers name, used in system"`
+}
+```
+
+而且如果你的对象tag里面如果存在json或者thrift描述，那么就会使用改描述作为字段名，即如下的代码：
+
+```
+type Object struct {
+	ObjectId   string	`json:"object_id"`
+	Score      int64		`json:"player_score"`
+	PlayerName string	`json:"player_name"`
+}
+```
+
+就会输出如下的文档信息：
+
+```
+Object {
+object_id (string, optional): ,
+player_score (string, optional): ,
+player_name (int64, optional):
+}
+```
 ## 常见错误及问题
 
+1. Q:bee没有上面执行的命令？
+
+   A:请更新bee到最新版本，目前bee的版本是1.1.2，beego的版本是1.3.1
+
+1. Q:bee更新的时候出错了？
+
+   A:第一可能是GFW的问题，第二可能是你修改过了源码，删除重新下载，第三可能你升级了Go版本，你需要删除GOPATH/pkg下的所有文件
+
+1. Q:下载swagger很慢？
+
+   A:想办法让他变快,因为我现在放在了github上面
+
+1. Q:文档生成了，但是我没办法测试请求？
+
+   A:你看看你访问的地址是不是和请求的URL是同一个地址，因为swagger是使用Ajax请求数据的，所以跨域的问题，解决CORS的办法就是保持域一致，包括URL和端口。
+
+1. Q:运行的时候发生了未知的错误？
+
+   A:那就来提issue或者给我留言吧，我会尽力帮助你解决你遇到的问题
