@@ -87,11 +87,82 @@ func main() {
 }
 ```
 
-入口文件就是一个普通的beego应用的标准代码，只是这里多了几行代码，把swagger加入了static，因为我们需要把文档服务器集成到beego的API应用中来。
+入口文件就是一个普通的beego应用的标准代码，只是这里多了几行代码，把swagger加入了static，因为我们需要把文档服务器集成到beego的API应用中来。然后增加了docs的初始化引入，和router的效果一样。接下里我们先来看看自动化API的路由是怎么设计的
 ## namespace路由
+自动化路由才有了namespace来进行设计，而且注意两点，第一目前只支持namespace的路由支持自动化文档，第二只支持NSNamespace和NSInclude解析，而且是只能两个层级，先看我们的路由设置：
 
+```
+func init() {
+	ns := beego.NewNamespace("/v1",
+		beego.NSNamespace("/object",
+			beego.NSInclude(
+				&controllers.ObjectController{},
+			),
+		),
+		beego.NSNamespace("/user",
+			beego.NSInclude(
+				&controllers.UserController{},
+			),
+		),
+	)
+	beego.AddNamespace(ns)
+}
+```
+我们先来看一下这个代码，首先是使用beego.NewNamespace创建一个ns的变量，这个变量里面其实就是存储了一棵路由树，我们可以把这棵树加到其他任意已经存在的树中去，这也就是namespace的好处，可以在任意的模块中设计自己的namespace，然后把这个namespace加到其他的应用中去，可以增加任意的前缀等。
+
+这里我们分析一下NewNamespace这个函数，这个函数的定义是这样的`NewNamespace(prefix string, params ...innnerNamespace) *Namespace`，他的第一个参数就是前缀，第二个参数是`innnerNamespace`多参数，那么我们来看看`innnerNamespace`的定义是什么：
+
+	type innnerNamespace func(*Namespace)
+
+它是一个函数，也就是只要是符合参数是`*Namespace`的函数都可以。那么在beego里面定义了如下的方法支持返回这个函数类型：
+
+- NSCond(cond namespaceCond) innnerNamespace
+- NSBefore(filiterList ...FilterFunc) innnerNamespace
+- NSAfter(filiterList ...FilterFunc) innnerNamespace
+- NSInclude(cList …ControllerInterface) innnerNamespace
+- NSRouter(rootpath string, c ControllerInterface, mappingMethods …string) innnerNamespace
+- NSGet(rootpath string, f FilterFunc) innnerNamespace
+- NSPost(rootpath string, f FilterFunc) innnerNamespace
+- NSDelete(rootpath string, f FilterFunc) innnerNamespace
+- NSPut(rootpath string, f FilterFunc) innnerNamespace
+- NSHead(rootpath string, f FilterFunc) innnerNamespace
+- NSOptions(rootpath string, f FilterFunc) innnerNamespace
+- NSPatch(rootpath string, f FilterFunc) innnerNamespace
+- NSAny(rootpath string, f FilterFunc) innnerNamespace
+- NSHandler(rootpath string, h http.Handler) innnerNamespace
+- NSAutoRouter(c ControllerInterface) innnerNamespace 
+- NSAutoPrefix(prefix string, c ControllerInterface) innnerNamespace
+- NSNamespace(prefix string, params …innnerNamespace) innnerNamespace
+
+因此我们可以在`NewNamespace`这个函数的第二个参数列表中使用上面的任意函数作为参数调用。
+
+我们看一下路由代码，这是一个层级嵌套的函数，第一个参数是`/v1`，即为`/v1`开头的路由树，第二个参数是`beego.NSNamespace`，第三个参数也是`beego.NSNamespace`，也就是路由树嵌套了路由树，而我们的`beego.NSNamespace`里面也是和`NewNamespace`一样的参数，第一个参数是路由前缀，第二个参数是slice参数。这里我们调用了`beego.NSInclude`来进行注解路由的引入，这个函数是专门为注解路由设计的，我们可以看到这个设计里面我们没有任何的路由信息，只是设置了前缀，那么这个的路由是在哪里设置的呢？我们接下来分析什么是注解路由。
 
 ## 注解路由
+可能有些同学不了解什么是注解路由，也就是在Controller类上添加一个注释让框架给自动添加Route，那么我们来看一下`ObjectController`和`UserController`中怎么写路由注解的：
+
+```
+// Operations about object
+type ObjectController struct {
+	beego.Controller
+}
+
+// @Title create
+// @Description create object
+// @Param	body		body 	models.Object	true		"The object content"
+// @Success 200 {string} models.Object.Id
+// @Failure 403 body is empty
+// @router / [post]
+func (this *ObjectController) Post() {
+	var ob models.Object
+	json.Unmarshal(this.Ctx.Input.RequestBody, &ob)
+	objectid := models.AddOne(ob)
+	this.Data["json"] = map[string]string{"ObjectId": objectid}
+	this.ServeJson()
+}
+```
+
+我们看到我们的每一个函数上面有大段的注释，注解路由
 
 ## 自动化文档
 
