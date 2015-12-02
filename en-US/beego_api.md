@@ -25,7 +25,7 @@ With the auto generated document by integrating Swagger into beego we can have t
 	go get -u github.com/beego/bee
 	go get -u github.com/astaxie/beego
 	
-Go to `GOPATH/src` directory and execute command `bee api bapi` to create the API application. Then go to the application directory `cd bapi` and run `bee run -downdoc=true -docgen=true`.
+Go to `GOPATH/src` directory and execute command `bee api bapi` to create the API application. Then go to the application directory `cd bapi` and run `bee run -downdoc=true -gendoc=true`.
 
 This displays output similar to the following:
 
