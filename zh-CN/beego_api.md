@@ -16,7 +16,7 @@ beego1.3版本已经在上个星期发布了，但是还是有很多人不了解
 	go get -u github.com/beego/bee
 	go get -u github.com/astaxie/beego
 	
-然后进入到你的`GOPATH/src`目录，执行命令`bee api bapi`,进入目录`cd bapi`,执行命令`bee run -downdoc=true -docgen=true`.请看下面我执行的效果图：
+然后进入到你的`GOPATH/src`目录，执行命令`bee api bapi`,进入目录`cd bapi`,执行命令`bee run -downdoc=true -gendoc=true`.请看下面我执行的效果图：
 
 ![](https://raw.githubusercontent.com/beego/beeblog/master/zh-CN/images/bee_api.png)
 
