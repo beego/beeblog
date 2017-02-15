@@ -315,7 +315,7 @@ Let's take a look at these annotations:
     * `query` means the parameter in url send by GET. such as ?aa=bb&cc=dd
     * `form` means the parameter send by POST.
     * `path` means the parameter in the url path, such as for `/user/{uid}` uid is a parameter with `path` type.
-    * `body` means the raw dada send from request body.
+    * `body` means the raw data send from request body.
     * `header` means the parameter in request header
 
     `parameter data type` can be any one of the following values:
